@@ -281,4 +281,4 @@ class TestEdgeCases:
         import threading
 
         assert hasattr(handler, "_lock")
-        assert isinstance(handler._lock, threading.Lock)
+        assert isinstance(handler._lock, type(threading.Lock()))
