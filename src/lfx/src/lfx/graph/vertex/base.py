@@ -459,6 +459,23 @@ class Vertex:
 
         return messages
 
+    def _extract_token_usage(self) -> dict | None:
+        """Extract token usage from the component if available.
+
+        Reads _token_usage set by TokenUsageCallbackHandler via agents and models.
+        """
+        if self.custom_component is None:
+            return None
+
+        token_usage = getattr(self.custom_component, "_token_usage", None)
+        if isinstance(token_usage, dict) and "input" in token_usage and "output" in token_usage:
+            return {
+                "input": token_usage["input"],
+                "output": token_usage["output"],
+                "total": token_usage.get("total", token_usage["input"] + token_usage["output"]),
+            }
+        return None
+
     def finalize_build(self) -> None:
         result_dict = self.get_built_result()
         # We need to set the artifacts to pass information
@@ -466,6 +483,7 @@ class Vertex:
         self.set_artifacts()
         artifacts = self.artifacts_raw
         messages = self.extract_messages_from_artifacts(artifacts) if isinstance(artifacts, dict) else []
+        token_usage = self._extract_token_usage()
         result_dict = ResultData(
             results=result_dict,
             artifacts=artifacts,
@@ -474,6 +492,7 @@ class Vertex:
             messages=messages,
             component_display_name=self.display_name,
             component_id=self.id,
+            token_usage=token_usage,
         )
         self.set_result(result_dict)
 

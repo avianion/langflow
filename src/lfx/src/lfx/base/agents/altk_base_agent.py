@@ -23,6 +23,7 @@ from pydantic import Field
 from lfx.base.agents.callback import AgentAsyncHandler
 from lfx.base.agents.events import ExceptionWithMessageError, process_agent_events
 from lfx.base.agents.utils import data_to_messages, get_chat_output_sender_name
+from lfx.base.callback import TokenUsageCallbackHandler
 from lfx.components.models_and_agents import AgentComponent
 from lfx.log.logger import logger
 from lfx.memory import delete_message
@@ -362,6 +363,12 @@ class ALTKBaseAgentComponent(AgentComponent):
             content_blocks=[ContentBlock(title="Agent Steps", contents=[])],
             session_id=session_id or uuid.uuid4(),
         )
+        # Enable stream_usage on the LLM so token counts are included in streaming responses
+        if hasattr(self, "llm") and self.llm is not None and hasattr(self.llm, "stream_usage"):
+            self.llm.stream_usage = True
+
+        token_usage_handler = TokenUsageCallbackHandler()
+
         try:
             result = await process_agent_events(
                 runnable.astream_events(
@@ -369,6 +376,7 @@ class ALTKBaseAgentComponent(AgentComponent):
                     config={
                         "callbacks": [
                             AgentAsyncHandler(self.log),
+                            token_usage_handler,
                             *self.get_langchain_callbacks(),
                         ]
                     },
@@ -392,4 +400,7 @@ class ALTKBaseAgentComponent(AgentComponent):
             raise
 
         self.status = result
+        token_usage = token_usage_handler.get_token_usage()
+        if token_usage:
+            self._token_usage = token_usage
         return result

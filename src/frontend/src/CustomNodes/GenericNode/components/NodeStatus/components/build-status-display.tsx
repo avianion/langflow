@@ -1,3 +1,4 @@
+import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import {
   RUN_TIMESTAMP_PREFIX,
   STATUS_BUILD,
@@ -6,13 +7,14 @@ import {
   STATUS_MISSING_FIELDS_ERROR,
 } from "@/constants/constants";
 import { BuildStatus } from "@/constants/enums";
+import { formatTokenCount } from "../utils/format-token-count";
 
 const StatusMessage = ({ children, className = "text-foreground" }) => (
   <span className={`flex ${className}`}>{children}</span>
 );
 
 const TimeStamp = ({ prefix, time }) => (
-  <div className="flex items-center text-sm text-secondary-foreground">
+  <div className="flex items-center text-secondary-foreground">
     <div>{prefix}</div>
     <div className="ml-1 text-secondary-foreground">{time}</div>
   </div>
@@ -21,7 +23,36 @@ const TimeStamp = ({ prefix, time }) => (
 const Duration = ({ duration }) => (
   <div className="flex items-center text-secondary-foreground">
     <div>Duration:</div>
-    <div className="ml-1">{duration}</div>
+    <div className="ml-auto">{duration}</div>
+  </div>
+);
+
+const TokenUsageDisplay = ({
+  tokenUsage,
+}: {
+  tokenUsage: { input: number; output: number; total: number };
+}) => (
+  <div className="flex flex-col gap-2 text-secondary-foreground">
+    <div className="flex items-center">
+      <div>Input tokens:</div>
+      <div className="ml-auto flex items-center gap-1 text-sm">
+        <ForwardedIconComponent
+          name="Coins"
+          className="h-3 w-3 text-secondary-foreground"
+        />
+        {formatTokenCount(tokenUsage.input)}
+      </div>
+    </div>
+    <div className="flex items-center">
+      <div>Output tokens:</div>
+      <div className="ml-auto flex items-center gap-1 text-sm">
+        <ForwardedIconComponent
+          name="Coins"
+          className="h-3 w-3 text-secondary-foreground"
+        />
+        {formatTokenCount(tokenUsage.output)}
+      </div>
+    </div>
   </div>
 );
 
@@ -30,18 +61,19 @@ const ValidationDetails = ({
   lastRunTime,
   validationStatus,
 }) => (
-  <div className="max-h-100 px-1 py-2.5">
-    <div className="flex max-h-80 flex-col gap-2">
-      {validationString && (
-        <div className="break-words text-sm text-foreground">
-          {validationString}
-        </div>
-      )}
-      {lastRunTime && (
-        <TimeStamp prefix={RUN_TIMESTAMP_PREFIX} time={lastRunTime} />
-      )}
-      <Duration duration={validationStatus?.data.duration} />
-    </div>
+  <div className="flex max-h-100 flex-col gap-2">
+    {validationString && (
+      <div className="break-words text-sm text-foreground">
+        {validationString}
+      </div>
+    )}
+    {lastRunTime && (
+      <TimeStamp prefix={RUN_TIMESTAMP_PREFIX} time={lastRunTime} />
+    )}
+    <Duration duration={validationStatus?.data.duration} />
+    {validationStatus?.data?.token_usage && (
+      <TokenUsageDisplay tokenUsage={validationStatus.data.token_usage} />
+    )}
   </div>
 );
 

@@ -24,6 +24,7 @@ import { classNames, cn } from "@/utils/utils";
 import IconComponent from "../../../../components/common/genericIconComponent";
 import BuildStatusDisplay from "./components/build-status-display";
 import { normalizeTimeString } from "./utils/format-run-time";
+import { formatTokenCount } from "./utils/format-token-count";
 
 const POLLING_TIMEOUT = 21000;
 const POLLING_INTERVAL = 3000;
@@ -392,7 +393,7 @@ export default function NodeStatus({
           {showNodeStatus && (
             <ShadTooltip
               styleClasses={cn(
-                "border rounded-xl",
+                "border rounded-xl px-2 py-3",
                 conditionSuccess
                   ? "border-accent-emerald-foreground bg-success-background"
                   : "border-destructive bg-error-background",
@@ -410,9 +411,24 @@ export default function NodeStatus({
               <div className="cursor-help">
                 {conditionSuccess && validationStatus?.data?.duration ? (
                   <div
-                    className="flex rounded-sm px-1 font-mono text-xs text-accent-emerald-foreground transition-colors hover:bg-accent-emerald"
+                    className="flex items-center gap-1 rounded-sm px-1 font-mono text-xs text-accent-emerald-foreground transition-colors hover:bg-accent-emerald"
                     data-testid={`node_duration_` + display_name.toLowerCase()}
                   >
+                    {validationStatus?.data?.token_usage && (
+                      <>
+                        <IconComponent
+                          name="Coins"
+                          className="h-3 w-3 text-foreground/50"
+                          strokeWidth={ICON_STROKE_WIDTH}
+                        />
+                        <span>
+                          {formatTokenCount(
+                            validationStatus.data.token_usage.total,
+                          )}
+                        </span>
+                        <span className="text-foreground/50">|</span>
+                      </>
+                    )}
                     <span>
                       {normalizeTimeString(validationStatus?.data?.duration)}
                     </span>

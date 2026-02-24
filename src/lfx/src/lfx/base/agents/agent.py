@@ -12,6 +12,7 @@ from langchain_core.runnables import Runnable
 from lfx.base.agents.callback import AgentAsyncHandler
 from lfx.base.agents.events import ExceptionWithMessageError, process_agent_events
 from lfx.base.agents.utils import get_chat_output_sender_name
+from lfx.base.callback import TokenUsageCallbackHandler
 from lfx.custom.custom_component.component import Component, _get_component_toolkit
 from lfx.field_typing import Tool
 from lfx.inputs.inputs import InputTypes, MultilineInput
@@ -255,18 +256,30 @@ class LCAgentComponent(Component):
             session_id=session_id or uuid.uuid4(),
         )
 
+        # Enable stream_usage on the LLM so token counts are included in streaming responses
+        if hasattr(self, "llm") and self.llm is not None and hasattr(self.llm, "stream_usage"):
+            self.llm.stream_usage = True
+
         # Create token callback if event_manager is available
         # This wraps the event_manager's on_token method to match OnTokenFunctionType Protocol
         on_token_callback: OnTokenFunctionType | None = None
         if self._event_manager:
             on_token_callback = cast("OnTokenFunctionType", self._event_manager.on_token)
 
+        token_usage_handler = TokenUsageCallbackHandler()
+
         try:
             result = await process_agent_events(
                 runnable.astream_events(
                     input_dict,
                     # here we use the shared callbacks because the AgentExecutor uses the tools
-                    config={"callbacks": [AgentAsyncHandler(self.log), *self._get_shared_callbacks()]},
+                    config={
+                        "callbacks": [
+                            AgentAsyncHandler(self.log),
+                            token_usage_handler,
+                            *self._get_shared_callbacks(),
+                        ]
+                    },
                     version="v2",
                 ),
                 agent_message,
@@ -288,6 +301,9 @@ class LCAgentComponent(Component):
             raise
 
         self.status = result
+        token_usage = token_usage_handler.get_token_usage()
+        if token_usage:
+            self._token_usage = token_usage
         return result
 
     @abstractmethod

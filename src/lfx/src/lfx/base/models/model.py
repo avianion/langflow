@@ -8,6 +8,7 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import BaseOutputParser
 
+from lfx.base.callback import TokenUsageCallbackHandler
 from lfx.base.constants import STREAM_INFO_TEXT
 from lfx.custom.custom_component.component import Component
 from lfx.field_typing import LanguageModel
@@ -237,6 +238,12 @@ class LCModelComponent(Component):
             messages.insert(0, SystemMessage(content=system_message))
         inputs: list | dict = messages or {}
         lf_message = None
+        token_usage_handler = TokenUsageCallbackHandler()
+
+        # Enable stream_usage on the LLM so token counts are included in streaming responses
+        if hasattr(runnable, "stream_usage"):
+            runnable.stream_usage = True
+
         try:
             # TODO: Depreciated Feature to be removed in upcoming release
             if hasattr(self, "output_parser") and self.output_parser is not None:
@@ -246,7 +253,7 @@ class LCModelComponent(Component):
                 {
                     "run_name": self.display_name,
                     "project_name": self.get_project_name(),
-                    "callbacks": self.get_langchain_callbacks(),
+                    "callbacks": [token_usage_handler, *self.get_langchain_callbacks()],
                 }
             )
             if stream:
@@ -266,6 +273,11 @@ class LCModelComponent(Component):
             if message := self._get_exception_message(e):
                 raise ValueError(message) from e
             raise
+
+        token_usage = token_usage_handler.get_token_usage()
+        if token_usage:
+            self._token_usage = token_usage
+
         return lf_message or Message(text=result)
 
     async def _handle_stream(self, runnable, inputs):
@@ -300,6 +312,9 @@ class LCModelComponent(Component):
         else:
             message = await runnable.ainvoke(inputs)
             result = message.content if hasattr(message, "content") else message
+            if isinstance(message, AIMessage):
+                status_message = self.build_status_message(message)
+                self.status = status_message
         return lf_message, result
 
     @abstractmethod
