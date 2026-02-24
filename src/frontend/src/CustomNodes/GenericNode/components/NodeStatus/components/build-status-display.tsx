@@ -14,14 +14,14 @@ const StatusMessage = ({ children, className = "text-foreground" }) => (
 );
 
 const TimeStamp = ({ prefix, time }) => (
-  <div className="flex items-center text-secondary-foreground">
+  <div className="flex items-center text-xxs text-secondary-foreground">
     <div>{prefix}</div>
     <div className="ml-1 text-secondary-foreground">{time}</div>
   </div>
 );
 
 const Duration = ({ duration }) => (
-  <div className="flex items-center text-secondary-foreground">
+  <div className="flex items-center text-xxs text-secondary-foreground">
     <div>Duration:</div>
     <div className="ml-auto">{duration}</div>
   </div>
@@ -32,10 +32,10 @@ const TokenUsageDisplay = ({
 }: {
   tokenUsage: { input: number; output: number; total: number };
 }) => (
-  <div className="flex flex-col gap-2 text-secondary-foreground">
+  <div className="flex flex-col gap-1 text-secondary-foreground">
     <div className="flex items-center">
-      <div>Input tokens:</div>
-      <div className="ml-auto flex items-center gap-1 text-sm">
+      <div className="text-xxs">Input tokens:</div>
+      <div className="ml-auto flex items-center gap-1 font-mono text-xs">
         <ForwardedIconComponent
           name="Coins"
           className="h-3 w-3 text-secondary-foreground"
@@ -44,11 +44,11 @@ const TokenUsageDisplay = ({
       </div>
     </div>
     <div className="flex items-center">
-      <div>Output tokens:</div>
-      <div className="ml-auto flex items-center gap-1 text-sm">
+      <div className="text-xxs">Output tokens:</div>
+      <div className="ml-auto flex items-center gap-1 font-mono text-xs">
         <ForwardedIconComponent
           name="Coins"
-          className="h-3 w-3 text-secondary-foreground"
+          className="h-3 w-3 text-secondary-foreground text-xs"
         />
         {formatTokenCount(tokenUsage.output)}
       </div>
@@ -61,7 +61,7 @@ const ValidationDetails = ({
   lastRunTime,
   validationStatus,
 }) => (
-  <div className="flex max-h-100 flex-col gap-2">
+  <div className="flex max-h-100 flex-col gap-1">
     {validationString && (
       <div className="break-words text-sm text-foreground">
         {validationString}
