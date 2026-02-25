@@ -59102,7 +59102,8 @@
                           "tool_mode": false,
                           "trace_as_metadata": true,
                           "track_in_telemetry": true,
-                          "type": "int"
+                          "type": "int",
+                          "value": 0
                         }
                       }
                     }
@@ -59908,7 +59909,8 @@
                           "tool_mode": false,
                           "trace_as_metadata": true,
                           "track_in_telemetry": true,
-                          "type": "int"
+                          "type": "int",
+                          "value": 0
                         }
                       }
                     }
@@ -60576,7 +60578,8 @@
                           "tool_mode": false,
                           "trace_as_metadata": true,
                           "track_in_telemetry": true,
-                          "type": "int"
+                          "type": "int",
+                          "value": 0
                         }
                       }
                     }
@@ -61081,7 +61084,8 @@
                           "tool_mode": false,
                           "trace_as_metadata": true,
                           "track_in_telemetry": true,
-                          "type": "int"
+                          "type": "int",
+                          "value": 0
                         }
                       }
                     }
@@ -61746,7 +61750,8 @@
                           "tool_mode": false,
                           "trace_as_metadata": true,
                           "track_in_telemetry": true,
-                          "type": "int"
+                          "type": "int",
+                          "value": 0
                         }
                       }
                     }
@@ -63974,13 +63979,15 @@
             "hf_model_name",
             "openai_model_name",
             "max_tokens",
+            "merge_peers",
+            "always_emit_headings",
             "doc_key"
           ],
           "frozen": false,
           "icon": "Docling",
           "legacy": false,
           "metadata": {
-            "code_hash": "d84ce7ffc6cb",
+            "code_hash": "49d762d97039",
             "dependencies": {
               "dependencies": [
                 {
@@ -64021,6 +64028,26 @@
           "pinned": false,
           "template": {
             "_type": "Component",
+            "always_emit_headings": {
+              "_input_type": "BoolInput",
+              "advanced": true,
+              "display_name": "Always emit headings",
+              "dynamic": true,
+              "info": "Emit headings even for empty sections.",
+              "list": false,
+              "list_add_label": "Add More",
+              "name": "always_emit_headings",
+              "override_skip": false,
+              "placeholder": "",
+              "required": false,
+              "show": true,
+              "title_case": false,
+              "tool_mode": false,
+              "trace_as_metadata": true,
+              "track_in_telemetry": true,
+              "type": "bool",
+              "value": false
+            },
             "chunker": {
               "_input_type": "DropdownInput",
               "advanced": false,
@@ -64030,6 +64057,9 @@
               "dynamic": false,
               "external_options": {},
               "info": "Which chunker to use.",
+              "input_types": [
+                "Message"
+              ],
               "name": "chunker",
               "options": [
                 "HybridChunker",
@@ -64065,7 +64095,7 @@
               "show": true,
               "title_case": false,
               "type": "code",
-              "value": "import json\n\nimport tiktoken\nfrom docling_core.transforms.chunker import BaseChunker, DocMeta\nfrom docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker\n\nfrom lfx.base.data.docling_utils import extract_docling_documents\nfrom lfx.custom import Component\nfrom lfx.io import DropdownInput, HandleInput, IntInput, MessageTextInput, Output, StrInput\nfrom lfx.schema import Data, DataFrame\n\n\nclass ChunkDoclingDocumentComponent(Component):\n    display_name: str = \"Chunk DoclingDocument\"\n    description: str = \"Use the DocumentDocument chunkers to split the document into chunks.\"\n    documentation = \"https://docling-project.github.io/docling/concepts/chunking/\"\n    icon = \"Docling\"\n    name = \"ChunkDoclingDocument\"\n\n    inputs = [\n        HandleInput(\n            name=\"data_inputs\",\n            display_name=\"Data or DataFrame\",\n            info=\"The data with documents to split in chunks.\",\n            input_types=[\"Data\", \"DataFrame\"],\n            required=True,\n        ),\n        DropdownInput(\n            name=\"chunker\",\n            display_name=\"Chunker\",\n            options=[\"HybridChunker\", \"HierarchicalChunker\"],\n            info=(\"Which chunker to use.\"),\n            value=\"HybridChunker\",\n            real_time_refresh=True,\n        ),\n        DropdownInput(\n            name=\"provider\",\n            display_name=\"Provider\",\n            options=[\"Hugging Face\", \"OpenAI\"],\n            info=(\"Which tokenizer provider.\"),\n            value=\"Hugging Face\",\n            show=True,\n            real_time_refresh=True,\n            advanced=True,\n            dynamic=True,\n        ),\n        StrInput(\n            name=\"hf_model_name\",\n            display_name=\"HF model name\",\n            info=(\n                \"Model name of the tokenizer to use with the HybridChunker when Hugging Face is chosen as a tokenizer.\"\n            ),\n            value=\"sentence-transformers/all-MiniLM-L6-v2\",\n            show=True,\n            advanced=True,\n            dynamic=True,\n        ),\n        StrInput(\n            name=\"openai_model_name\",\n            display_name=\"OpenAI model name\",\n            info=(\"Model name of the tokenizer to use with the HybridChunker when OpenAI is chosen as a tokenizer.\"),\n            value=\"gpt-4o\",\n            show=False,\n            advanced=True,\n            dynamic=True,\n        ),\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Maximum tokens\",\n            info=(\"Maximum number of tokens for the HybridChunker.\"),\n            show=True,\n            required=False,\n            advanced=True,\n            dynamic=True,\n        ),\n        MessageTextInput(\n            name=\"doc_key\",\n            display_name=\"Doc Key\",\n            info=\"The key to use for the DoclingDocument column.\",\n            value=\"doc\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"DataFrame\", name=\"dataframe\", method=\"chunk_documents\"),\n    ]\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None) -> dict:\n        if field_name == \"chunker\":\n            provider_type = build_config[\"provider\"][\"value\"]\n            is_hf = provider_type == \"Hugging Face\"\n            is_openai = provider_type == \"OpenAI\"\n            if field_value == \"HybridChunker\":\n                build_config[\"provider\"][\"show\"] = True\n                build_config[\"hf_model_name\"][\"show\"] = is_hf\n                build_config[\"openai_model_name\"][\"show\"] = is_openai\n                build_config[\"max_tokens\"][\"show\"] = True\n            else:\n                build_config[\"provider\"][\"show\"] = False\n                build_config[\"hf_model_name\"][\"show\"] = False\n                build_config[\"openai_model_name\"][\"show\"] = False\n                build_config[\"max_tokens\"][\"show\"] = False\n        elif field_name == \"provider\" and build_config[\"chunker\"][\"value\"] == \"HybridChunker\":\n            if field_value == \"Hugging Face\":\n                build_config[\"hf_model_name\"][\"show\"] = True\n                build_config[\"openai_model_name\"][\"show\"] = False\n            elif field_value == \"OpenAI\":\n                build_config[\"hf_model_name\"][\"show\"] = False\n                build_config[\"openai_model_name\"][\"show\"] = True\n\n        return build_config\n\n    def _docs_to_data(self, docs) -> list[Data]:\n        return [Data(text=doc.page_content, data=doc.metadata) for doc in docs]\n\n    def chunk_documents(self) -> DataFrame:\n        documents, warning = extract_docling_documents(self.data_inputs, self.doc_key)\n        if warning:\n            self.status = warning\n\n        chunker: BaseChunker\n        if self.chunker == \"HybridChunker\":\n            try:\n                from docling_core.transforms.chunker.hybrid_chunker import HybridChunker\n            except ImportError as e:\n                msg = (\n                    \"HybridChunker is not installed. Please install it with `uv pip install docling-core[chunking] \"\n                    \"or `uv pip install transformers`\"\n                )\n                raise ImportError(msg) from e\n            max_tokens: int | None = self.max_tokens if self.max_tokens else None\n            if self.provider == \"Hugging Face\":\n                try:\n                    from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer\n                except ImportError as e:\n                    msg = (\n                        \"HuggingFaceTokenizer is not installed.\"\n                        \" Please install it with `uv pip install docling-core[chunking]`\"\n                    )\n                    raise ImportError(msg) from e\n                tokenizer = HuggingFaceTokenizer.from_pretrained(\n                    model_name=self.hf_model_name,\n                    max_tokens=max_tokens,\n                )\n            elif self.provider == \"OpenAI\":\n                try:\n                    from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer\n                except ImportError as e:\n                    msg = (\n                        \"OpenAITokenizer is not installed.\"\n                        \" Please install it with `uv pip install docling-core[chunking]`\"\n                        \" or `uv pip install transformers`\"\n                    )\n                    raise ImportError(msg) from e\n                if max_tokens is None:\n                    max_tokens = 128 * 1024  # context window length required for OpenAI tokenizers\n                tokenizer = OpenAITokenizer(\n                    tokenizer=tiktoken.encoding_for_model(self.openai_model_name), max_tokens=max_tokens\n                )\n            chunker = HybridChunker(\n                tokenizer=tokenizer,\n            )\n        elif self.chunker == \"HierarchicalChunker\":\n            chunker = HierarchicalChunker()\n\n        results: list[Data] = []\n        try:\n            for doc in documents:\n                for chunk in chunker.chunk(dl_doc=doc):\n                    enriched_text = chunker.contextualize(chunk=chunk)\n                    meta = DocMeta.model_validate(chunk.meta)\n\n                    results.append(\n                        Data(\n                            data={\n                                \"text\": enriched_text,\n                                \"document_id\": f\"{doc.origin.binary_hash}\",\n                                \"doc_items\": json.dumps([item.self_ref for item in meta.doc_items]),\n                            }\n                        )\n                    )\n\n        except Exception as e:\n            msg = f\"Error splitting text: {e}\"\n            raise TypeError(msg) from e\n\n        return DataFrame(results)\n"
+              "value": "import json\n\nimport tiktoken\nfrom docling_core.transforms.chunker import BaseChunker, DocMeta\nfrom docling_core.transforms.chunker.hierarchical_chunker import HierarchicalChunker\n\nfrom lfx.base.data.docling_utils import extract_docling_documents\nfrom lfx.custom import Component\nfrom lfx.io import BoolInput, DropdownInput, HandleInput, IntInput, MessageTextInput, Output, StrInput\nfrom lfx.schema import Data, DataFrame\n\n\nclass ChunkDoclingDocumentComponent(Component):\n    display_name: str = \"Chunk DoclingDocument\"\n    description: str = \"Use the DocumentDocument chunkers to split the document into chunks.\"\n    documentation = \"https://docling-project.github.io/docling/concepts/chunking/\"\n    icon = \"Docling\"\n    name = \"ChunkDoclingDocument\"\n\n    inputs = [\n        HandleInput(\n            name=\"data_inputs\",\n            display_name=\"Data or DataFrame\",\n            info=\"The data with documents to split in chunks.\",\n            input_types=[\"Data\", \"DataFrame\"],\n            required=True,\n        ),\n        DropdownInput(\n            name=\"chunker\",\n            display_name=\"Chunker\",\n            options=[\"HybridChunker\", \"HierarchicalChunker\"],\n            info=(\"Which chunker to use.\"),\n            value=\"HybridChunker\",\n            real_time_refresh=True,\n            input_types=[\"Message\"],\n        ),\n        DropdownInput(\n            name=\"provider\",\n            display_name=\"Provider\",\n            options=[\"Hugging Face\", \"OpenAI\"],\n            info=(\"Which tokenizer provider.\"),\n            value=\"Hugging Face\",\n            show=True,\n            real_time_refresh=True,\n            advanced=True,\n            dynamic=True,\n        ),\n        StrInput(\n            name=\"hf_model_name\",\n            display_name=\"HF model name\",\n            info=(\n                \"Model name of the tokenizer to use with the HybridChunker when Hugging Face is chosen as a tokenizer.\"\n            ),\n            value=\"sentence-transformers/all-MiniLM-L6-v2\",\n            show=True,\n            advanced=True,\n            dynamic=True,\n        ),\n        StrInput(\n            name=\"openai_model_name\",\n            display_name=\"OpenAI model name\",\n            info=(\"Model name of the tokenizer to use with the HybridChunker when OpenAI is chosen as a tokenizer.\"),\n            value=\"gpt-4o\",\n            show=False,\n            advanced=True,\n            dynamic=True,\n        ),\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Maximum tokens\",\n            info=(\"Maximum number of tokens for the HybridChunker.\"),\n            show=True,\n            required=False,\n            advanced=True,\n            dynamic=True,\n            input_types=[\"Message\"],\n        ),\n        BoolInput(\n            name=\"merge_peers\",\n            display_name=\"Merge peers\",\n            info=\"Merge undersized chunks sharing the same relevant metadata.\",\n            value=True,\n            show=True,\n            advanced=True,\n            dynamic=True,\n        ),\n        BoolInput(\n            name=\"always_emit_headings\",\n            display_name=\"Always emit headings\",\n            info=\"Emit headings even for empty sections.\",\n            value=False,\n            show=True,\n            advanced=True,\n            dynamic=True,\n        ),\n        MessageTextInput(\n            name=\"doc_key\",\n            display_name=\"Doc Key\",\n            info=\"The key to use for the DoclingDocument column.\",\n            value=\"doc\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"DataFrame\", name=\"dataframe\", method=\"chunk_documents\"),\n    ]\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None) -> dict:\n        \"\"\"Update build_config to show/hide fields based on chunker and provider selection.\"\"\"\n        if field_name == \"chunker\":\n            provider_type = build_config[\"provider\"][\"value\"]\n            is_hf = provider_type == \"Hugging Face\"\n            is_openai = provider_type == \"OpenAI\"\n            if field_value == \"HybridChunker\":\n                build_config[\"provider\"][\"show\"] = True\n                build_config[\"hf_model_name\"][\"show\"] = is_hf\n                build_config[\"openai_model_name\"][\"show\"] = is_openai\n                build_config[\"max_tokens\"][\"show\"] = True\n                build_config[\"merge_peers\"][\"show\"] = True\n                build_config[\"always_emit_headings\"][\"show\"] = True\n            else:\n                build_config[\"provider\"][\"show\"] = False\n                build_config[\"hf_model_name\"][\"show\"] = False\n                build_config[\"openai_model_name\"][\"show\"] = False\n                build_config[\"max_tokens\"][\"show\"] = False\n                build_config[\"merge_peers\"][\"show\"] = False\n                build_config[\"always_emit_headings\"][\"show\"] = False\n        elif field_name == \"provider\" and build_config[\"chunker\"][\"value\"] == \"HybridChunker\":\n            if field_value == \"Hugging Face\":\n                build_config[\"hf_model_name\"][\"show\"] = True\n                build_config[\"openai_model_name\"][\"show\"] = False\n            elif field_value == \"OpenAI\":\n                build_config[\"hf_model_name\"][\"show\"] = False\n                build_config[\"openai_model_name\"][\"show\"] = True\n\n        return build_config\n\n    def _docs_to_data(self, docs) -> list[Data]:\n        return [Data(text=doc.page_content, data=doc.metadata) for doc in docs]\n\n    def chunk_documents(self) -> DataFrame:\n        documents, warning = extract_docling_documents(self.data_inputs, self.doc_key)\n        if warning:\n            self.status = warning\n\n        chunker: BaseChunker\n        if self.chunker == \"HybridChunker\":\n            try:\n                from docling_core.transforms.chunker.hybrid_chunker import HybridChunker\n            except ImportError as e:\n                msg = (\n                    \"HybridChunker is not installed. Please install it with `uv pip install docling-core[chunking] \"\n                    \"or `uv pip install transformers`\"\n                )\n                raise ImportError(msg) from e\n            max_tokens: int | None = self.max_tokens if self.max_tokens else None\n            if self.provider == \"Hugging Face\":\n                try:\n                    from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer\n                except ImportError as e:\n                    msg = (\n                        \"HuggingFaceTokenizer is not installed.\"\n                        \" Please install it with `uv pip install docling-core[chunking]`\"\n                    )\n                    raise ImportError(msg) from e\n                tokenizer = HuggingFaceTokenizer.from_pretrained(\n                    model_name=self.hf_model_name,\n                    max_tokens=max_tokens,\n                )\n            elif self.provider == \"OpenAI\":\n                try:\n                    from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer\n                except ImportError as e:\n                    msg = (\n                        \"OpenAITokenizer is not installed.\"\n                        \" Please install it with `uv pip install docling-core[chunking]`\"\n                        \" or `uv pip install transformers`\"\n                    )\n                    raise ImportError(msg) from e\n                if max_tokens is None:\n                    max_tokens = 128 * 1024  # context window length required for OpenAI tokenizers\n                tokenizer = OpenAITokenizer(\n                    tokenizer=tiktoken.encoding_for_model(self.openai_model_name), max_tokens=max_tokens\n                )\n            chunker = HybridChunker(\n                tokenizer=tokenizer,\n                merge_peers=bool(self.merge_peers),\n                always_emit_headings=bool(self.always_emit_headings),\n            )\n\n        elif self.chunker == \"HierarchicalChunker\":\n            chunker = HierarchicalChunker()\n        else:\n            msg = f\"Unknown chunker: {self.chunker}\"\n            raise ValueError(msg)\n\n        results: list[Data] = []\n        try:\n            for doc in documents:\n                for chunk in chunker.chunk(dl_doc=doc):\n                    enriched_text = chunker.contextualize(chunk=chunk)\n                    meta = DocMeta.model_validate(chunk.meta)\n\n                    results.append(\n                        Data(\n                            data={\n                                \"text\": enriched_text,\n                                \"document_id\": f\"{doc.origin.binary_hash}\",\n                                \"doc_items\": json.dumps([item.self_ref for item in meta.doc_items]),\n                            }\n                        )\n                    )\n\n        except Exception as e:\n            msg = f\"Error splitting text: {e}\"\n            raise TypeError(msg) from e\n\n        return DataFrame(results)\n"
             },
             "data_inputs": {
               "_input_type": "HandleInput",
@@ -64142,6 +64172,9 @@
               "display_name": "Maximum tokens",
               "dynamic": true,
               "info": "Maximum number of tokens for the HybridChunker.",
+              "input_types": [
+                "Message"
+              ],
               "list": false,
               "list_add_label": "Add More",
               "name": "max_tokens",
@@ -64155,6 +64188,26 @@
               "track_in_telemetry": true,
               "type": "int",
               "value": 0
+            },
+            "merge_peers": {
+              "_input_type": "BoolInput",
+              "advanced": true,
+              "display_name": "Merge peers",
+              "dynamic": true,
+              "info": "Merge undersized chunks sharing the same relevant metadata.",
+              "list": false,
+              "list_add_label": "Add More",
+              "name": "merge_peers",
+              "override_skip": false,
+              "placeholder": "",
+              "required": false,
+              "show": true,
+              "title_case": false,
+              "tool_mode": false,
+              "trace_as_metadata": true,
+              "track_in_telemetry": true,
+              "type": "bool",
+              "value": true
             },
             "openai_model_name": {
               "_input_type": "StrInput",
@@ -64626,7 +64679,7 @@
           "icon": "Docling",
           "legacy": false,
           "metadata": {
-            "code_hash": "5723576d00e5",
+            "code_hash": "409d771a961e",
             "dependencies": {
               "dependencies": [
                 {
@@ -64677,6 +64730,9 @@
               "display_name": "HTTP headers",
               "dynamic": false,
               "info": "Optional dictionary of additional headers required for connecting to Docling Serve.",
+              "input_types": [
+                "Message"
+              ],
               "list": false,
               "list_add_label": "Add More",
               "name": "api_headers",
@@ -64729,7 +64785,7 @@
               "show": true,
               "title_case": false,
               "type": "code",
-              "value": "import base64\nimport time\nfrom concurrent.futures import Future, ThreadPoolExecutor\nfrom pathlib import Path\nfrom typing import Any\n\nimport httpx\nfrom docling_core.types.doc import DoclingDocument\nfrom pydantic import ValidationError\n\nfrom lfx.base.data import BaseFileComponent\nfrom lfx.inputs import IntInput, NestedDictInput, StrInput\nfrom lfx.inputs.inputs import FloatInput\nfrom lfx.schema import Data\nfrom lfx.utils.util import transform_localhost_url\n\n\nclass DoclingRemoteComponent(BaseFileComponent):\n    display_name = \"Docling Serve\"\n    description = \"Uses Docling to process input documents connecting to your instance of Docling Serve.\"\n    documentation = \"https://docling-project.github.io/docling/\"\n    trace_type = \"tool\"\n    icon = \"Docling\"\n    name = \"DoclingRemote\"\n\n    MAX_500_RETRIES = 5\n\n    # https://docling-project.github.io/docling/usage/supported_formats/\n    VALID_EXTENSIONS = [\n        \"adoc\",\n        \"asciidoc\",\n        \"asc\",\n        \"bmp\",\n        \"csv\",\n        \"dotx\",\n        \"dotm\",\n        \"docm\",\n        \"docx\",\n        \"htm\",\n        \"html\",\n        \"jpeg\",\n        \"jpg\",\n        \"json\",\n        \"md\",\n        \"pdf\",\n        \"png\",\n        \"potx\",\n        \"ppsx\",\n        \"pptm\",\n        \"potm\",\n        \"ppsm\",\n        \"pptx\",\n        \"tiff\",\n        \"txt\",\n        \"xls\",\n        \"xlsx\",\n        \"xhtml\",\n        \"xml\",\n        \"webp\",\n    ]\n\n    inputs = [\n        *BaseFileComponent.get_base_inputs(),\n        StrInput(\n            name=\"api_url\",\n            display_name=\"Server address\",\n            info=\"URL of the Docling Serve instance.\",\n            required=True,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"Concurrency\",\n            info=\"Maximum number of concurrent requests for the server.\",\n            advanced=True,\n            value=2,\n        ),\n        FloatInput(\n            name=\"max_poll_timeout\",\n            display_name=\"Maximum poll time\",\n            info=\"Maximum waiting time for the document conversion to complete.\",\n            advanced=True,\n            value=3600,\n        ),\n        NestedDictInput(\n            name=\"api_headers\",\n            display_name=\"HTTP headers\",\n            advanced=True,\n            required=False,\n            info=(\"Optional dictionary of additional headers required for connecting to Docling Serve.\"),\n        ),\n        NestedDictInput(\n            name=\"docling_serve_opts\",\n            display_name=\"Docling options\",\n            advanced=True,\n            required=False,\n            info=(\n                \"Optional dictionary of additional options. \"\n                \"See https://github.com/docling-project/docling-serve/blob/main/docs/usage.md for more information.\"\n            ),\n        ),\n    ]\n\n    outputs = [\n        *BaseFileComponent.get_base_outputs(),\n    ]\n\n    def process_files(self, file_list: list[BaseFileComponent.BaseFile]) -> list[BaseFileComponent.BaseFile]:\n        # Transform localhost URLs to container-accessible hosts when running in a container\n        transformed_url = transform_localhost_url(self.api_url)\n        base_url = f\"{transformed_url}/v1\"\n\n        def _convert_document(client: httpx.Client, file_path: Path, options: dict[str, Any]) -> Data | None:\n            encoded_doc = base64.b64encode(file_path.read_bytes()).decode()\n            payload = {\n                \"options\": options,\n                \"sources\": [{\"kind\": \"file\", \"base64_string\": encoded_doc, \"filename\": file_path.name}],\n            }\n\n            response = client.post(f\"{base_url}/convert/source/async\", json=payload)\n            response.raise_for_status()\n            task = response.json()\n\n            http_failures = 0\n            retry_status_start = 500\n            retry_status_end = 600\n            start_wait_time = time.monotonic()\n            while task[\"task_status\"] not in (\"success\", \"failure\"):\n                # Check if processing exceeds the maximum poll timeout\n                processing_time = time.monotonic() - start_wait_time\n                if processing_time >= self.max_poll_timeout:\n                    msg = (\n                        f\"Processing time {processing_time=} exceeds the maximum poll timeout {self.max_poll_timeout=}.\"\n                        \"Please increase the max_poll_timeout parameter or review why the processing \"\n                        \"takes long on the server.\"\n                    )\n                    self.log(msg)\n                    raise RuntimeError(msg)\n\n                # Call for a new status update\n                time.sleep(2)\n                response = client.get(f\"{base_url}/status/poll/{task['task_id']}\")\n\n                # Check if the status call gets into 5xx errors and retry\n                if retry_status_start <= response.status_code < retry_status_end:\n                    http_failures += 1\n                    if http_failures > self.MAX_500_RETRIES:\n                        self.log(f\"The status requests got a http response {response.status_code} too many times.\")\n                        return None\n                    continue\n\n                # Update task status\n                task = response.json()\n\n            result_resp = client.get(f\"{base_url}/result/{task['task_id']}\")\n            result_resp.raise_for_status()\n            result = result_resp.json()\n\n            if \"json_content\" not in result[\"document\"] or result[\"document\"][\"json_content\"] is None:\n                self.log(\"No JSON DoclingDocument found in the result.\")\n                return None\n\n            try:\n                doc = DoclingDocument.model_validate(result[\"document\"][\"json_content\"])\n                return Data(data={\"doc\": doc, \"file_path\": str(file_path)})\n            except ValidationError as e:\n                self.log(f\"Error validating the document. {e}\")\n                return None\n\n        docling_options = {\n            \"to_formats\": [\"json\"],\n            \"image_export_mode\": \"placeholder\",\n            **(self.docling_serve_opts or {}),\n        }\n\n        processed_data: list[Data | None] = []\n        with (\n            httpx.Client(headers=self.api_headers) as client,\n            ThreadPoolExecutor(max_workers=self.max_concurrency) as executor,\n        ):\n            futures: list[tuple[int, Future]] = []\n            for i, file in enumerate(file_list):\n                if file.path is None:\n                    processed_data.append(None)\n                    continue\n\n                futures.append((i, executor.submit(_convert_document, client, file.path, docling_options)))\n\n            for _index, future in futures:\n                try:\n                    result_data = future.result()\n                    processed_data.append(result_data)\n                except (httpx.HTTPStatusError, httpx.RequestError, KeyError, ValueError) as exc:\n                    self.log(f\"Docling remote processing failed: {exc}\")\n                    raise\n\n        return self.rollup_data(file_list, processed_data)\n"
+              "value": "import base64\nimport time\nfrom concurrent.futures import Future, ThreadPoolExecutor\nfrom pathlib import Path\nfrom typing import Any\n\nimport httpx\nfrom docling_core.types.doc import DoclingDocument\nfrom pydantic import ValidationError\n\nfrom lfx.base.data import BaseFileComponent\nfrom lfx.inputs import IntInput, NestedDictInput, StrInput\nfrom lfx.inputs.inputs import FloatInput\nfrom lfx.schema import Data\nfrom lfx.utils.util import transform_localhost_url\n\n\nclass DoclingRemoteComponent(BaseFileComponent):\n    display_name = \"Docling Serve\"\n    description = \"Uses Docling to process input documents connecting to your instance of Docling Serve.\"\n    documentation = \"https://docling-project.github.io/docling/\"\n    trace_type = \"tool\"\n    icon = \"Docling\"\n    name = \"DoclingRemote\"\n\n    MAX_500_RETRIES = 5\n\n    # https://docling-project.github.io/docling/usage/supported_formats/\n    VALID_EXTENSIONS = [\n        \"adoc\",\n        \"asciidoc\",\n        \"asc\",\n        \"bmp\",\n        \"csv\",\n        \"dotx\",\n        \"dotm\",\n        \"docm\",\n        \"docx\",\n        \"htm\",\n        \"html\",\n        \"jpeg\",\n        \"jpg\",\n        \"json\",\n        \"md\",\n        \"pdf\",\n        \"png\",\n        \"potx\",\n        \"ppsx\",\n        \"pptm\",\n        \"potm\",\n        \"ppsm\",\n        \"pptx\",\n        \"tiff\",\n        \"txt\",\n        \"xls\",\n        \"xlsx\",\n        \"xhtml\",\n        \"xml\",\n        \"webp\",\n    ]\n\n    inputs = [\n        *BaseFileComponent.get_base_inputs(),\n        StrInput(\n            name=\"api_url\",\n            display_name=\"Server address\",\n            info=\"URL of the Docling Serve instance.\",\n            required=True,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"Concurrency\",\n            info=\"Maximum number of concurrent requests for the server.\",\n            advanced=True,\n            value=2,\n            input_types=[\"Message\"],\n        ),\n        FloatInput(\n            name=\"max_poll_timeout\",\n            display_name=\"Maximum poll time\",\n            info=\"Maximum waiting time for the document conversion to complete.\",\n            advanced=True,\n            value=3600,\n            input_types=[\"Message\"],\n        ),\n        NestedDictInput(\n            name=\"api_headers\",\n            display_name=\"HTTP headers\",\n            advanced=True,\n            required=False,\n            info=(\"Optional dictionary of additional headers required for connecting to Docling Serve.\"),\n            input_types=[\"Message\"],\n        ),\n        NestedDictInput(\n            name=\"docling_serve_opts\",\n            display_name=\"Docling options\",\n            advanced=True,\n            required=False,\n            info=(\n                \"Optional dictionary of additional options. \"\n                \"See https://github.com/docling-project/docling-serve/blob/main/docs/usage.md for more information.\"\n            ),\n            input_types=[\"Message\"],\n        ),\n    ]\n\n    outputs = [\n        *BaseFileComponent.get_base_outputs(),\n    ]\n\n    def process_files(self, file_list: list[BaseFileComponent.BaseFile]) -> list[BaseFileComponent.BaseFile]:\n        # Transform localhost URLs to container-accessible hosts when running in a container\n        transformed_url = transform_localhost_url(self.api_url)\n        base_url = f\"{transformed_url}/v1\"\n\n        def _convert_document(client: httpx.Client, file_path: Path, options: dict[str, Any]) -> Data | None:\n            encoded_doc = base64.b64encode(file_path.read_bytes()).decode()\n            payload = {\n                \"options\": options,\n                \"sources\": [{\"kind\": \"file\", \"base64_string\": encoded_doc, \"filename\": file_path.name}],\n            }\n\n            response = client.post(f\"{base_url}/convert/source/async\", json=payload)\n            response.raise_for_status()\n            task = response.json()\n\n            http_failures = 0\n            retry_status_start = 500\n            retry_status_end = 600\n            start_wait_time = time.monotonic()\n            while task[\"task_status\"] not in (\"success\", \"failure\"):\n                # Check if processing exceeds the maximum poll timeout\n                processing_time = time.monotonic() - start_wait_time\n                if processing_time >= self.max_poll_timeout:\n                    msg = (\n                        f\"Processing time {processing_time=} exceeds the maximum poll timeout {self.max_poll_timeout=}.\"\n                        \"Please increase the max_poll_timeout parameter or review why the processing \"\n                        \"takes long on the server.\"\n                    )\n                    self.log(msg)\n                    raise RuntimeError(msg)\n\n                # Call for a new status update\n                time.sleep(2)\n                response = client.get(f\"{base_url}/status/poll/{task['task_id']}\")\n\n                # Check if the status call gets into 5xx errors and retry\n                if retry_status_start <= response.status_code < retry_status_end:\n                    http_failures += 1\n                    if http_failures > self.MAX_500_RETRIES:\n                        self.log(f\"The status requests got a http response {response.status_code} too many times.\")\n                        return None\n                    continue\n\n                # Update task status\n                task = response.json()\n\n            result_resp = client.get(f\"{base_url}/result/{task['task_id']}\")\n            result_resp.raise_for_status()\n            result = result_resp.json()\n\n            if \"json_content\" not in result[\"document\"] or result[\"document\"][\"json_content\"] is None:\n                self.log(\"No JSON DoclingDocument found in the result.\")\n                return None\n\n            try:\n                doc = DoclingDocument.model_validate(result[\"document\"][\"json_content\"])\n                return Data(data={\"doc\": doc, \"file_path\": str(file_path)})\n            except ValidationError as e:\n                self.log(f\"Error validating the document. {e}\")\n                return None\n\n        docling_options = {\n            \"to_formats\": [\"json\"],\n            \"image_export_mode\": \"placeholder\",\n            **(self.docling_serve_opts or {}),\n        }\n\n        processed_data: list[Data | None] = []\n        with (\n            httpx.Client(headers=self.api_headers) as client,\n            ThreadPoolExecutor(max_workers=self.max_concurrency) as executor,\n        ):\n            futures: list[tuple[int, Future]] = []\n            for i, file in enumerate(file_list):\n                if file.path is None:\n                    processed_data.append(None)\n                    continue\n\n                futures.append((i, executor.submit(_convert_document, client, file.path, docling_options)))\n\n            for _index, future in futures:\n                try:\n                    result_data = future.result()\n                    processed_data.append(result_data)\n                except (httpx.HTTPStatusError, httpx.RequestError, KeyError, ValueError) as exc:\n                    self.log(f\"Docling remote processing failed: {exc}\")\n                    raise\n\n        return self.rollup_data(file_list, processed_data)\n"
             },
             "delete_server_file_after_processing": {
               "_input_type": "BoolInput",
@@ -64757,6 +64813,9 @@
               "display_name": "Docling options",
               "dynamic": false,
               "info": "Optional dictionary of additional options. See https://github.com/docling-project/docling-serve/blob/main/docs/usage.md for more information.",
+              "input_types": [
+                "Message"
+              ],
               "list": false,
               "list_add_label": "Add More",
               "name": "docling_serve_opts",
@@ -64841,6 +64900,9 @@
               "display_name": "Concurrency",
               "dynamic": false,
               "info": "Maximum number of concurrent requests for the server.",
+              "input_types": [
+                "Message"
+              ],
               "list": false,
               "list_add_label": "Add More",
               "name": "max_concurrency",
@@ -64861,6 +64923,9 @@
               "display_name": "Maximum poll time",
               "dynamic": false,
               "info": "Maximum waiting time for the document conversion to complete.",
+              "input_types": [
+                "Message"
+              ],
               "list": false,
               "list_add_label": "Add More",
               "name": "max_poll_timeout",
@@ -116363,6 +116428,6 @@
     "num_components": 356,
     "num_modules": 95
   },
-  "sha256": "329e4cd3856a58f35b82b27f8100191b045048427e37351a6d127dda3ecad0c7",
+  "sha256": "7d56a75054c5850cb7ec8517638cf98048780ac84222ff691e744ef2b0d7dd6a",
   "version": "0.3.0"
 }
