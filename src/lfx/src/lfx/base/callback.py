@@ -39,9 +39,9 @@ class TokenUsageCallbackHandler(BaseCallbackHandler):
         if not self._has_data:
             return None
         return {
-            "input": self._total_input_tokens,
-            "output": self._total_output_tokens,
-            "total": self._total_input_tokens + self._total_output_tokens,
+            "input_tokens": self._total_input_tokens,
+            "output_tokens": self._total_output_tokens,
+            "total_tokens": self._total_input_tokens + self._total_output_tokens,
         }
 
     def _extract_from_llm_output(self, response: LLMResult) -> tuple[int, int] | None:

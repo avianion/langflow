@@ -30,7 +30,11 @@ const Duration = ({ duration }) => (
 const TokenUsageDisplay = ({
   tokenUsage,
 }: {
-  tokenUsage: { input: number; output: number; total: number };
+  tokenUsage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
 }) => (
   <div className="flex flex-col gap-1 text-secondary-foreground">
     <div className="flex items-center">
@@ -40,7 +44,7 @@ const TokenUsageDisplay = ({
           name="Coins"
           className="h-3 w-3 text-secondary-foreground"
         />
-        {formatTokenCount(tokenUsage.input)}
+        {formatTokenCount(tokenUsage.input_tokens)}
       </div>
     </div>
     <div className="flex items-center">
@@ -50,7 +54,7 @@ const TokenUsageDisplay = ({
           name="Coins"
           className="h-3 w-3 text-secondary-foreground text-xs"
         />
-        {formatTokenCount(tokenUsage.output)}
+        {formatTokenCount(tokenUsage.output_tokens)}
       </div>
     </div>
   </div>

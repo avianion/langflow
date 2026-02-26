@@ -256,7 +256,11 @@ export type VertexDataTypeAPI = {
   duration?: string;
   artifacts?: any | ChatOutputType | ChatInputType;
   message?: ChatOutputType | ChatInputType;
-  token_usage?: { input: number; output: number; total: number };
+  token_usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
 };
 
 export type CodeErrorDataTypeAPI = {

@@ -468,11 +468,13 @@ class Vertex:
             return None
 
         token_usage = getattr(self.custom_component, "_token_usage", None)
-        if isinstance(token_usage, dict) and "input" in token_usage and "output" in token_usage:
+        if isinstance(token_usage, dict) and "input_tokens" in token_usage and "output_tokens" in token_usage:
             return {
-                "input": token_usage["input"],
-                "output": token_usage["output"],
-                "total": token_usage.get("total", token_usage["input"] + token_usage["output"]),
+                "input_tokens": token_usage["input_tokens"],
+                "output_tokens": token_usage["output_tokens"],
+                "total_tokens": token_usage.get(
+                    "total_tokens", token_usage["input_tokens"] + token_usage["output_tokens"]
+                ),
             }
         return None
 

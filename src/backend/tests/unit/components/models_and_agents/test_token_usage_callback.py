@@ -47,7 +47,7 @@ class TestLegacyLLMOutput:
         )
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 10, "output": 20, "total": 30}
+        assert result == {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
 
     def test_legacy_format_takes_priority_over_generation(self, handler):
         """llm_output should be checked first, before generation-level strategies."""
@@ -64,7 +64,7 @@ class TestLegacyLLMOutput:
         )
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 10, "output": 20, "total": 30}
+        assert result == {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
 
 
 class TestUsageMetadata:
@@ -76,7 +76,7 @@ class TestUsageMetadata:
         response = LLMResult(generations=[[gen]])
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 15, "output": 25, "total": 40}
+        assert result == {"input_tokens": 15, "output_tokens": 25, "total_tokens": 40}
 
     def test_object_format(self, handler):
         usage_meta = MagicMock()
@@ -90,7 +90,7 @@ class TestUsageMetadata:
         response = LLMResult(generations=[[gen]])
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 100, "output": 200, "total": 300}
+        assert result == {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
 
 
 class TestResponseMetadata:
@@ -109,7 +109,7 @@ class TestResponseMetadata:
         response = LLMResult(generations=[[gen]])
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 50, "output": 60, "total": 110}
+        assert result == {"input_tokens": 50, "output_tokens": 60, "total_tokens": 110}
 
     def test_anthropic_usage(self, handler):
         gen = _make_chat_gen(
@@ -124,7 +124,7 @@ class TestResponseMetadata:
         response = LLMResult(generations=[[gen]])
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 30, "output": 40, "total": 70}
+        assert result == {"input_tokens": 30, "output_tokens": 40, "total_tokens": 70}
 
 
 class TestGenerationInfo:
@@ -144,7 +144,7 @@ class TestGenerationInfo:
         response = LLMResult(generations=[[gen]])
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 5, "output": 10, "total": 15}
+        assert result == {"input_tokens": 5, "output_tokens": 10, "total_tokens": 15}
 
     def test_anthropic_format(self, handler):
         gen = Generation(
@@ -160,7 +160,7 @@ class TestGenerationInfo:
         response = LLMResult(generations=[[gen]])
         handler.on_llm_end(response)
         result = handler.get_token_usage()
-        assert result == {"input": 8, "output": 12, "total": 20}
+        assert result == {"input_tokens": 8, "output_tokens": 12, "total_tokens": 20}
 
 
 class TestAccumulation:
@@ -180,7 +180,7 @@ class TestAccumulation:
         handler.on_llm_end(response2)
 
         result = handler.get_token_usage()
-        assert result == {"input": 40, "output": 60, "total": 100}
+        assert result == {"input_tokens": 40, "output_tokens": 60, "total_tokens": 100}
 
     def test_accumulates_three_calls(self, handler):
         for i in range(3):
@@ -192,7 +192,7 @@ class TestAccumulation:
 
         result = handler.get_token_usage()
         # input: 10+20+30=60, output: 5+10+15=30
-        assert result == {"input": 60, "output": 30, "total": 90}
+        assert result == {"input_tokens": 60, "output_tokens": 30, "total_tokens": 90}
 
 
 class TestNoData:
@@ -261,7 +261,7 @@ class TestEdgeCases:
         handler.on_llm_end(response2)
 
         result = handler.get_token_usage()
-        assert result == {"input": 40, "output": 60, "total": 100}
+        assert result == {"input_tokens": 40, "output_tokens": 60, "total_tokens": 100}
 
     def test_empty_generations_list(self, handler):
         """Empty generations list should not crash."""

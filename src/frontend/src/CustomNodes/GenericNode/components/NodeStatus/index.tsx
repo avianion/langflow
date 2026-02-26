@@ -392,7 +392,6 @@ export default function NodeStatus({
         <div className="flex items-center gap-2 self-center">
           {showNodeStatus && (
             <ShadTooltip
-              open={true}
               styleClasses={cn(
                 "border rounded-xl p-2 bg",
                 conditionSuccess
@@ -424,7 +423,7 @@ export default function NodeStatus({
                         />
                         <span>
                           {formatTokenCount(
-                            validationStatus.data.token_usage.total,
+                            validationStatus.data.token_usage.total_tokens,
                           )}
                         </span>
                         <span className="text-muted-foreground">|</span>
