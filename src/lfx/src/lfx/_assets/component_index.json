@@ -72457,7 +72457,7 @@
               "dependencies": [
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "lfx",
@@ -72605,7 +72605,7 @@
               "dependencies": [
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "googleapiclient",
@@ -72766,7 +72766,7 @@
               "dependencies": [
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "langchain_core",
@@ -72895,7 +72895,7 @@
               "dependencies": [
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "langchain_google_community",
@@ -73024,7 +73024,7 @@
               "dependencies": [
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "googleapiclient",
@@ -73314,7 +73314,7 @@
                 },
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "langchain_google_genai",
@@ -73673,7 +73673,7 @@
               "dependencies": [
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 },
                 {
                   "name": "google_auth_oauthlib",
@@ -111786,7 +111786,7 @@
                 },
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 }
               ],
               "total_dependencies": 3
@@ -112170,7 +112170,7 @@
                 },
                 {
                   "name": "google",
-                  "version": "1.139.0"
+                  "version": "2.30.0"
                 }
               ],
               "total_dependencies": 3
@@ -116428,6 +116428,6 @@
     "num_components": 356,
     "num_modules": 95
   },
-  "sha256": "a1aacc9b40ae1102fef89cb830f5e9ec5de9829d746c81a9d47375f95a6fffb2",
+  "sha256": "422b29dafc4bc9d6277f85584ca7d7387ddabbc36c45fee34aae6e8c1b43eeb8",
   "version": "0.3.0"
 }
