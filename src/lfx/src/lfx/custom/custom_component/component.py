@@ -1770,6 +1770,18 @@ class Component(CustomComponent):
             and not isinstance(original_message.text, str)
         )
 
+    async def _apply_token_usage(self, token_usage: dict[str, int] | None, result) -> None:
+        """Store token usage and apply it to the result message if applicable."""
+        if not token_usage:
+            return
+        self._token_usage = token_usage
+        if isinstance(result, Message) and result.properties.usage is None:
+            from lfx.schema.properties import Usage
+
+            result.properties.usage = Usage(**token_usage)
+            await self._update_stored_message(result)
+            await self._send_message_event(result, id_=result.get_id())
+
     async def _update_stored_message(self, message: Message) -> Message:
         """Update the stored message."""
         if hasattr(self, "_vertex") and self._vertex is not None and hasattr(self._vertex, "graph"):

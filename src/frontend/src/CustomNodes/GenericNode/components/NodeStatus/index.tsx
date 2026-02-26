@@ -19,12 +19,12 @@ import { useShortcutsStore } from "@/stores/shortcuts";
 import { useUtilityStore } from "@/stores/utilityStore";
 import type { VertexBuildTypeAPI } from "@/types/api";
 import type { NodeDataType } from "@/types/flow";
+import { formatTokenCount } from "@/utils/format-token-count";
 import { findLastNode } from "@/utils/reactflowUtils";
 import { classNames, cn } from "@/utils/utils";
 import IconComponent from "../../../../components/common/genericIconComponent";
 import BuildStatusDisplay from "./components/build-status-display";
 import { normalizeTimeString } from "./utils/format-run-time";
-import { formatTokenCount } from "./utils/format-token-count";
 
 const POLLING_TIMEOUT = 21000;
 const POLLING_INTERVAL = 3000;

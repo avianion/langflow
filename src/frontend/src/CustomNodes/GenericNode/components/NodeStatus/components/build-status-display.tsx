@@ -7,6 +7,7 @@ import {
   STATUS_MISSING_FIELDS_ERROR,
 } from "@/constants/constants";
 import { BuildStatus } from "@/constants/enums";
+import type { TokenUsage } from "@/types/chat";
 import { formatTokenCount } from "@/utils/format-token-count";
 
 const StatusMessage = ({ children, className = "text-foreground" }) => (
@@ -27,15 +28,7 @@ const Duration = ({ duration }) => (
   </div>
 );
 
-const TokenUsageDisplay = ({
-  tokenUsage,
-}: {
-  tokenUsage: {
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
-  };
-}) => (
+const TokenUsageDisplay = ({ tokenUsage }: { tokenUsage: TokenUsage }) => (
   <div className="flex flex-col gap-1 text-secondary-foreground">
     <div className="flex items-center">
       <div className="text-xxs">Input tokens:</div>

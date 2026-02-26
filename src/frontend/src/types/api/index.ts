@@ -4,7 +4,7 @@ import type {
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
-import type { ChatInputType, ChatOutputType } from "../chat";
+import type { ChatInputType, ChatOutputType, TokenUsage } from "../chat";
 import type { FlowType } from "../flow";
 //kind and class are just representative names to represent the actual structure of the object received by the API
 export type APIDataType = { [key: string]: APIKindType };
@@ -256,11 +256,7 @@ export type VertexDataTypeAPI = {
   duration?: string;
   artifacts?: any | ChatOutputType | ChatInputType;
   message?: ChatOutputType | ChatInputType;
-  token_usage?: {
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
-  };
+  token_usage?: TokenUsage;
 };
 
 export type CodeErrorDataTypeAPI = {

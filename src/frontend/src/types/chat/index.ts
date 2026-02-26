@@ -34,6 +34,12 @@ export type SourceType = {
   source: string;
 };
 
+export type TokenUsage = {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+};
+
 export type PropertiesType = {
   source: SourceType;
   icon?: string;
@@ -45,11 +51,7 @@ export type PropertiesType = {
   state?: string;
   positive_feedback?: boolean | null;
   build_duration?: number | null;
-  usage?: {
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
-  } | null;
+  usage?: TokenUsage | null;
 };
 
 export type ChatOutputType = {

@@ -314,16 +314,8 @@ class LCModelComponent(Component):
                 raise ValueError(message) from e
             raise
 
-        token_usage = token_usage_handler.get_token_usage()
-        if token_usage:
-            self._token_usage = token_usage
-
+        await self._apply_token_usage(token_usage_handler.get_token_usage(), lf_message)
         if lf_message:
-            # If usage wasn't captured from streaming chunks, use callback handler data
-            if lf_message.properties.usage is None and token_usage:
-                lf_message.properties.usage = Usage(**token_usage)
-                await self._update_stored_message(lf_message)
-                await self._send_message_event(lf_message, id_=lf_message.get_id())
             return lf_message
 
         # Create message with usage data if available

@@ -23,7 +23,6 @@ from lfx.schema.content_block import ContentBlock
 from lfx.schema.data import Data
 from lfx.schema.log import OnTokenFunctionType
 from lfx.schema.message import Message
-from lfx.schema.properties import Usage
 from lfx.template.field.base import Output
 from lfx.utils.constants import MESSAGE_SENDER_AI
 
@@ -302,13 +301,7 @@ class LCAgentComponent(Component):
             raise
 
         self.status = result
-        token_usage = token_usage_handler.get_token_usage()
-        if token_usage:
-            self._token_usage = token_usage
-            if isinstance(result, Message) and result.properties.usage is None:
-                result.properties.usage = Usage(**token_usage)
-                await self._update_stored_message(result)
-                await self._send_message_event(result, id_=result.get_id())
+        await self._apply_token_usage(token_usage_handler.get_token_usage(), result)
         return result
 
     @abstractmethod
