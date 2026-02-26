@@ -14,6 +14,7 @@ from lfx.custom.custom_component.component import Component
 from lfx.field_typing import LanguageModel
 from lfx.inputs.inputs import BoolInput, InputTypes, MessageInput, MultilineInput
 from lfx.schema.message import Message
+from lfx.schema.properties import Usage
 from lfx.template.field.base import Output
 from lfx.utils.constants import MESSAGE_SENDER_AI
 
@@ -166,6 +167,42 @@ class LCModelComponent(Component):
             status_message = f"Response: {message.content}"  # type: ignore[assignment]
         return status_message
 
+    def extract_usage(self, message: AIMessage) -> dict | None:
+        """Extract token usage from an AIMessage's response metadata.
+
+        Args:
+            message: The AIMessage with response_metadata containing usage info.
+
+        Returns:
+            A dict with input_tokens, output_tokens, total_tokens or None if not available.
+        """
+        if not message.response_metadata:
+            return None
+
+        response_metadata = message.response_metadata
+
+        # OpenAI format
+        if "token_usage" in response_metadata:
+            token_usage = response_metadata["token_usage"]
+            return {
+                "input_tokens": token_usage.get("prompt_tokens"),
+                "output_tokens": token_usage.get("completion_tokens"),
+                "total_tokens": token_usage.get("total_tokens"),
+            }
+
+        # Anthropic format
+        if "usage" in response_metadata:
+            usage = response_metadata["usage"]
+            input_tokens = usage.get("input_tokens")
+            output_tokens = usage.get("output_tokens")
+            return {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": (input_tokens or 0) + (output_tokens or 0) if input_tokens or output_tokens else None,
+            }
+
+        return None
+
     async def get_chat_result(
         self,
         *,
@@ -239,6 +276,7 @@ class LCModelComponent(Component):
         inputs: list | dict = messages or {}
         lf_message = None
         token_usage_handler = TokenUsageCallbackHandler()
+        usage_data = None
 
         # Enable stream_usage on the LLM so token counts are included in streaming responses
         if hasattr(runnable, "stream_usage"):
@@ -264,6 +302,8 @@ class LCModelComponent(Component):
             if isinstance(message, AIMessage):
                 status_message = self.build_status_message(message)
                 self.status = status_message
+                # Extract usage for the response
+                usage_data = self.extract_usage(message)
             elif isinstance(result, dict):
                 result = json.dumps(message, indent=4)
                 self.status = result
@@ -278,7 +318,14 @@ class LCModelComponent(Component):
         if token_usage:
             self._token_usage = token_usage
 
-        return lf_message or Message(text=result)
+        if lf_message:
+            return lf_message
+
+        # Create message with usage data if available
+        msg = Message(text=result)
+        if usage_data:
+            msg.properties.usage = Usage(**usage_data)
+        return msg
 
     async def _handle_stream(self, runnable, inputs):
         """Handle streaming responses from the language model.
