@@ -7,7 +7,7 @@ import {
   STATUS_MISSING_FIELDS_ERROR,
 } from "@/constants/constants";
 import { BuildStatus } from "@/constants/enums";
-import { formatTokenCount } from "../utils/format-token-count";
+import { formatTokenCount } from "@/utils/format-token-count";
 
 const StatusMessage = ({ children, className = "text-foreground" }) => (
   <span className={`flex ${className}`}>{children}</span>

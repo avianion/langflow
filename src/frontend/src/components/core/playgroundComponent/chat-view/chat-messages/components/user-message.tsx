@@ -1,22 +1,19 @@
 import { memo, useState } from "react";
+
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { EMPTY_INPUT_SEND_MESSAGE } from "@/constants/constants";
-import { useUpdateMessage } from "@/controllers/API/queries/messages";
 import { CustomProfileIcon } from "@/customization/components/custom-profile-icon";
-import useAlertStore from "@/stores/alertStore";
-import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import type { chatMessagePropsType } from "@/types/components";
 import { cn } from "@/utils/utils";
+
 import FilePreviewDisplay from "../../utils/file-preview-display";
-import { convertFiles } from "../utils/convert-files";
+import { useMessageActions } from "../hooks/use-message-actions";
 import EditMessageField from "./edit-message-field";
 import { EditMessageButton } from "./message-options";
 
 export const UserMessage = memo(
-  ({ chat, lastMessage, updateChat, playgroundPage }: chatMessagePropsType) => {
-    const setErrorData = useAlertStore((state) => state.setErrorData);
+  ({ chat, lastMessage, updateChat }: chatMessagePropsType) => {
     const [editMessage, setEditMessage] = useState(false);
-    const flow_id = useFlowsManagerStore((state) => state.currentFlowId);
 
     const isAudioMessage = chat.category === "audio";
     const chatMessage = chat.message ? chat.message.toString() : "";
@@ -30,63 +27,18 @@ export const UserMessage = memo(
 
     const isEmpty = decodedMessage?.trim() === "";
     const hasFiles = chat.files && chat.files.length > 0;
-    const { mutate: updateMessageMutation } = useUpdateMessage();
 
-    const handleEditMessage = (message: string) => {
-      updateMessageMutation(
-        {
-          message: {
-            id: chat.id,
-            files: convertFiles(chat.files),
-            sender_name: chat.sender_name ?? "User",
-            text: message,
-            sender: "User",
-            flow_id,
-            session_id: chat.session ?? "",
-          },
-          refetch: true,
+    const { handleEditMessage, handleEvaluateAnswer } = useMessageActions(
+      chat,
+      {
+        sender: "User",
+        senderName: "User",
+        onEditSuccess: (message) => {
+          updateChat?.(chat, message);
+          setEditMessage(false);
         },
-        {
-          onSuccess: () => {
-            updateChat?.(chat, message);
-            setEditMessage(false);
-          },
-          onError: () => {
-            setErrorData({
-              title: "Error updating messages.",
-            });
-          },
-        },
-      );
-    };
-
-    const handleEvaluateAnswer = (evaluation: boolean | null) => {
-      updateMessageMutation(
-        {
-          message: {
-            ...chat,
-            files: convertFiles(chat.files),
-            sender_name: chat.sender_name ?? "User",
-            text: chat.message.toString(),
-            sender: "User",
-            flow_id,
-            session_id: chat.session ?? "",
-            properties: {
-              ...chat.properties,
-              positive_feedback: evaluation,
-            },
-          },
-          refetch: true,
-        },
-        {
-          onError: () => {
-            setErrorData({
-              title: "Error updating messages.",
-            });
-          },
-        },
-      );
-    };
+      },
+    );
 
     const editedFlag = chat.edit ? (
       <div className="text-sm text-muted-foreground">(Edited)</div>

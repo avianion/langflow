@@ -45,6 +45,11 @@ export type PropertiesType = {
   state?: string;
   positive_feedback?: boolean | null;
   build_duration?: number | null;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+  } | null;
 };
 
 export type ChatOutputType = {

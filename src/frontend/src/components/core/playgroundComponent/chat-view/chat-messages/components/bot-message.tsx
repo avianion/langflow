@@ -1,36 +1,30 @@
 import { memo, useState } from "react";
+
 import LangflowLogo from "@/assets/LangflowLogo.svg?react";
 import IconComponent, {
   ForwardedIconComponent,
 } from "@/components/common/genericIconComponent";
 import { ContentBlockDisplay } from "@/components/core/chatComponents/ContentBlockDisplay";
-import { useUpdateMessage } from "@/controllers/API/queries/messages";
 import { CustomMarkdownField } from "@/customization/components/custom-markdown-field";
-import useAlertStore from "@/stores/alertStore";
 import useFlowStore from "@/stores/flowStore";
-import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import type { chatMessagePropsType } from "@/types/components";
 import { cn } from "@/utils/utils";
-import { useMessageDuration } from "../hooks/use-message-duration";
+
+import { useBotMessageMetrics } from "../hooks/use-bot-message-metrics";
+import { useMessageActions } from "../hooks/use-message-actions";
 import { useStreamingMessage } from "../hooks/use-streaming-message";
-import { useToolDurations } from "../hooks/use-tool-durations";
 import {
   getContentBlockLoadingState,
   getContentBlockState,
 } from "../utils/content-blocks";
-import { convertFiles } from "../utils/convert-files";
-import { formatSeconds, formatTime } from "../utils/format";
 import EditMessageField from "./edit-message-field";
 import { EditMessageButton } from "./message-options";
+import { MessageStatusHeader } from "./message-status-header";
 
 export const BotMessage = memo(
   ({ chat, lastMessage, updateChat, playgroundPage }: chatMessagePropsType) => {
-    const setErrorData = useAlertStore((state) => state.setErrorData);
     const [editMessage, setEditMessage] = useState(false);
     const isBuilding = useFlowStore((state) => state.isBuilding);
-    const buildStartTime = useFlowStore((state) => state.buildStartTime);
-    const buildDuration = useFlowStore((state) => state.buildDuration);
-    const flow_id = useFlowsManagerStore((state) => state.currentFlowId);
 
     const isAudioMessage = chat.category === "audio";
 
@@ -42,106 +36,25 @@ export const BotMessage = memo(
 
     const isEmpty = decodedMessage?.trim() === "";
     const chatMessage = chat.message ? chat.message.toString() : "";
-    const { mutate: updateMessageMutation } = useUpdateMessage();
 
-    const handleEditMessage = (message: string) => {
-      updateMessageMutation(
-        {
-          message: {
-            id: chat.id,
-            files: convertFiles(chat.files),
-            sender_name: chat.sender_name ?? "AI",
-            text: message,
-            sender: "Machine",
-            flow_id,
-            session_id: chat.session ?? "",
-          },
-          refetch: true,
+    const { handleEditMessage, handleEvaluateAnswer } = useMessageActions(
+      chat,
+      {
+        sender: "Machine",
+        senderName: "AI",
+        onEditSuccess: (message) => {
+          updateChat?.(chat, message);
+          setEditMessage(false);
         },
-        {
-          onSuccess: () => {
-            updateChat?.(chat, message);
-            setEditMessage(false);
-          },
-          onError: () => {
-            setErrorData({
-              title: "Error updating messages.",
-            });
-          },
-        },
-      );
-    };
-
-    const handleEvaluateAnswer = (evaluation: boolean | null) => {
-      updateMessageMutation(
-        {
-          message: {
-            ...chat,
-            files: convertFiles(chat.files),
-            sender_name: chat.sender_name ?? "AI",
-            text: chat.message.toString(),
-            sender: "Machine",
-            flow_id,
-            session_id: chat.session ?? "",
-            properties: {
-              ...chat.properties,
-              positive_feedback: evaluation,
-            },
-          },
-          refetch: true,
-        },
-        {
-          onError: () => {
-            setErrorData({
-              title: "Error updating messages.",
-            });
-          },
-        },
-      );
-    };
+      },
+    );
 
     const editedFlag = chat.edit ? (
       <div className="text-sm text-muted-foreground">(Edited)</div>
     ) : null;
 
-    const isEmoji = chat.properties?.icon?.match(
-      /[\u2600-\u27BF\uD83C-\uDBFF\uDC00-\uDFFF]/,
-    );
-
-    const thinkingActive = Boolean(isBuilding && lastMessage);
-
-    const { displayTime: liveDisplayTime } = useMessageDuration({
-      lastMessage,
-      isBuilding,
-      buildStartTime,
-      buildDuration,
-    });
-
-    // Prefer persisted duration (frozen value) over live timer
-    // This ensures nested agent segments show their own duration after reset
-    const persistedDuration = chat.properties?.build_duration;
-    const displayTime =
-      typeof persistedDuration === "number" && persistedDuration > 0
-        ? persistedDuration
-        : liveDisplayTime;
-
-    // Use shared hook for tool duration tracking
-    const { totalToolDuration } = useToolDurations(
-      chat.content_blocks,
-      thinkingActive,
-    );
-
-    // Check if message has tools
-    const messageHasTools = Boolean(
-      chat.content_blocks?.some((block) =>
-        block.contents.some((content) => content.type === "tool_use"),
-      ),
-    );
-
-    // The total tool duration green ms ALWAYS shows the sum of backend tool durations when tools exist
-    // It will be 0 until backend provides durations, then show the sum
-    // For messages without tools, it shows the same as displayTime
-    const greenMsTime = messageHasTools ? totalToolDuration : displayTime;
+    const { thinkingActive, displayTime, greenMsTime, messageHasTools } =
+      useBotMessageMetrics(chat, lastMessage);
 
     return (
       <>
@@ -162,27 +75,13 @@ export const BotMessage = memo(
                   />
                 )}
                 <span className="w-full flex justify-between">
-                  {thinkingActive && displayTime > 0 ? (
-                    <>
-                      <span>Running... {formatSeconds(displayTime)}</span>
-                      {messageHasTools && (
-                        <span className="text-emerald-500">
-                          {formatTime(greenMsTime, true)}
-                        </span>
-                      )}
-                    </>
-                  ) : !thinkingActive && displayTime > 0 ? (
-                    <>
-                      <span className="text-muted-foreground">
-                        Finished in {formatSeconds(displayTime)}
-                      </span>
-                      {messageHasTools && greenMsTime > 0 && (
-                        <span className="text-emerald-500">
-                          {formatTime(greenMsTime, true)}
-                        </span>
-                      )}
-                    </>
-                  ) : null}
+                  <MessageStatusHeader
+                    thinkingActive={thinkingActive}
+                    displayTime={displayTime}
+                    greenMsTime={greenMsTime}
+                    messageHasTools={messageHasTools}
+                    usage={chat.properties?.usage}
+                  />
                 </span>
               </div>
 
@@ -247,15 +146,13 @@ export const BotMessage = memo(
                                   onCancel={() => setEditMessage(false)}
                                 />
                               ) : (
-                                <>
-                                  <CustomMarkdownField
-                                    isAudioMessage={isAudioMessage}
-                                    chat={chat}
-                                    isEmpty={isEmpty && !isStreaming}
-                                    chatMessage={decodedMessage}
-                                    editedFlag={editedFlag}
-                                  />
-                                </>
+                                <CustomMarkdownField
+                                  isAudioMessage={isAudioMessage}
+                                  chat={chat}
+                                  isEmpty={isEmpty && !isStreaming}
+                                  chatMessage={decodedMessage}
+                                  editedFlag={editedFlag}
+                                />
                               )}
                             </div>
                           )}
